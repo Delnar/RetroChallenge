@@ -1,0 +1,2723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SILICON GAUNTLET // Authentic Retro Hardware Challenge Generator</title>
+  <style>
+    /* ==========================================================================
+       SILICON GAUNTLET - RETRO COMPUTING CHALLENGE DASHBOARD
+       Themes: Amber CRT (P31), Green Phosphor (P1), Turbo Vision Blue, BIOS White
+       ========================================================================== */
+    :root {
+      --bg-color: #120c02;
+      --card-bg: #1c1305;
+      --card-header: #291c06;
+      --panel-border: #805000;
+      --border-bright: #ffb833;
+      --text-main: #ffaa1d;
+      --text-dim: #996310;
+      --text-bright: #ffe6a3;
+      --accent-glow: rgba(255, 170, 29, 0.25);
+      --scanline-opacity: 0.22;
+      --cursor-color: #ffaa1d;
+      --conquered-color: #38ef7d;
+      --conquered-bg: #072913;
+      --danger-color: #ff3344;
+      --font-stack: "Fixedsys", "Consolas", "Courier New", "Lucida Console", Monaco, monospace;
+    }
+
+    [data-theme="green"] {
+      --bg-color: #031206;
+      --card-bg: #061c0b;
+      --card-header: #0b2e12;
+      --panel-border: #13772b;
+      --border-bright: #39ff74;
+      --text-main: #33ff66;
+      --text-dim: #1d8f3e;
+      --text-bright: #caffd6;
+      --accent-glow: rgba(51, 255, 102, 0.22);
+      --scanline-opacity: 0.22;
+      --cursor-color: #33ff66;
+      --conquered-color: #ffe600;
+      --conquered-bg: #292404;
+      --danger-color: #ff3838;
+    }
+
+    [data-theme="turbovision"] {
+      --bg-color: #000084;
+      --card-bg: #0000a8;
+      --card-header: #00aaaa;
+      --panel-border: #55ffff;
+      --border-bright: #ffffff;
+      --text-main: #ffffff;
+      --text-dim: #a8a8a8;
+      --text-bright: #ffff55;
+      --accent-glow: rgba(85, 255, 255, 0.25);
+      --scanline-opacity: 0.12;
+      --cursor-color: #ffff55;
+      --conquered-color: #55ff55;
+      --conquered-bg: #003311;
+      --danger-color: #ff5555;
+    }
+
+    [data-theme="bios"] {
+      --bg-color: #080808;
+      --card-bg: #101010;
+      --card-header: #1a1a1a;
+      --panel-border: #555555;
+      --border-bright: #cccccc;
+      --text-main: #d0d0d0;
+      --text-dim: #777777;
+      --text-bright: #ffffff;
+      --accent-glow: rgba(255, 255, 255, 0.15);
+      --scanline-opacity: 0.20;
+      --cursor-color: #ffffff;
+      --conquered-color: #00e676;
+      --conquered-bg: #0a2615;
+      --danger-color: #ff5252;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      min-height: 100vh;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      font-family: var(--font-stack);
+      font-size: 15px;
+      line-height: 1.5;
+      overflow-x: hidden;
+      letter-spacing: 0.5px;
+      transition: background-color 0.2s, color 0.2s;
+    }
+
+    /* CRT Overlay effects */
+    .crt-vignette {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      background: radial-gradient(circle at center, transparent 65%, rgba(0, 0, 0, 0.6) 100%);
+      z-index: 998;
+    }
+
+    .crt-scanlines {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.45) 50%),
+                  linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+      background-size: 100% 3px, 6px 100%;
+      opacity: var(--scanline-opacity);
+      z-index: 999;
+    }
+
+    body.scanlines-disabled .crt-scanlines {
+      display: none;
+    }
+
+    body.curvature-enabled .viewport-container {
+      border-radius: 20px;
+      margin: 12px auto;
+      max-width: 1200px;
+      box-shadow: inset 0 0 40px rgba(0,0,0,0.8), 0 0 25px var(--accent-glow);
+    }
+
+    /* Outer Wrapper */
+    .viewport-container {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 16px 20px 40px;
+      position: relative;
+      z-index: 10;
+    }
+
+    /* Header Bar */
+    header.bios-header {
+      border: 2px solid var(--panel-border);
+      background-color: var(--card-bg);
+      padding: 12px 18px;
+      margin-bottom: 18px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    }
+
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      border-bottom: 1px dashed var(--panel-border);
+      padding-bottom: 10px;
+      margin-bottom: 10px;
+    }
+
+    .brand-title {
+      font-size: 1.6rem;
+      font-weight: bold;
+      color: var(--text-bright);
+      text-shadow: 0 0 8px var(--accent-glow);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-badge {
+      font-size: 0.75rem;
+      padding: 2px 8px;
+      border: 1px solid var(--border-bright);
+      color: var(--border-bright);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .sys-time-box {
+      font-size: 0.85rem;
+      color: var(--text-dim);
+    }
+
+    .btn-retro {
+      font-family: var(--font-stack);
+      font-size: 0.85rem;
+      background: var(--card-bg);
+      color: var(--text-main);
+      border: 1px solid var(--panel-border);
+      padding: 5px 12px;
+      cursor: pointer;
+      text-transform: uppercase;
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      user-select: none;
+    }
+
+    .btn-retro:hover {
+      background: var(--card-header);
+      color: var(--text-bright);
+      border-color: var(--border-bright);
+      box-shadow: 0 0 8px var(--accent-glow);
+    }
+
+    .btn-retro:active {
+      transform: translateY(1px);
+    }
+
+    .btn-retro.active {
+      background: var(--border-bright);
+      color: var(--bg-color);
+      font-weight: bold;
+    }
+
+    /* BIOS Summary Banner */
+    .bios-status-banner {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 12px;
+      font-size: 0.85rem;
+    }
+
+    .status-col {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .status-label {
+      color: var(--text-dim);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+    }
+
+    .status-val {
+      color: var(--text-bright);
+      font-weight: bold;
+    }
+
+    .progress-bar-wrap {
+      background: #000;
+      border: 1px solid var(--panel-border);
+      height: 14px;
+      position: relative;
+      margin-top: 4px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--border-bright);
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    /* Tier Selection Deck */
+    .tier-selector-container {
+      margin-bottom: 20px;
+    }
+
+    .section-legend {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      font-size: 0.9rem;
+      font-weight: bold;
+      color: var(--text-dim);
+      text-transform: uppercase;
+    }
+
+    .tier-buttons-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+
+    @media (max-width: 860px) {
+      .tier-buttons-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    @media (max-width: 520px) {
+      .tier-buttons-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .tier-card-btn {
+      background: var(--card-bg);
+      border: 2px solid var(--panel-border);
+      padding: 12px 14px;
+      cursor: pointer;
+      font-family: var(--font-stack);
+      text-align: left;
+      color: var(--text-main);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      transition: all 0.15s ease;
+      position: relative;
+    }
+
+    .tier-card-btn:hover {
+      border-color: var(--border-bright);
+      background: var(--card-header);
+      box-shadow: 0 0 12px var(--accent-glow);
+    }
+
+    .tier-card-btn.selected {
+      border-color: var(--border-bright);
+      background: var(--card-header);
+      outline: 2px dashed var(--border-bright);
+      outline-offset: -5px;
+    }
+
+    .tier-card-btn.selected::after {
+      content: "► ACTIVE";
+      position: absolute;
+      top: 8px;
+      right: 10px;
+      font-size: 0.7rem;
+      color: var(--border-bright);
+      font-weight: bold;
+    }
+
+    .tier-title {
+      font-size: 1.05rem;
+      font-weight: bold;
+      color: var(--text-bright);
+    }
+
+    .tier-subtitle {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+    }
+
+    .tier-chips {
+      font-size: 0.72rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 4px;
+    }
+
+    .tier-chip {
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid var(--panel-border);
+      padding: 1px 5px;
+      color: var(--text-dim);
+    }
+
+    /* Dispenser Central Control */
+    .dispenser-control-deck {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      background: var(--card-bg);
+      border: 2px solid var(--panel-border);
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    .dispense-btn-primary {
+      background: var(--card-header);
+      border: 2px solid var(--border-bright);
+      color: var(--text-bright);
+      padding: 14px 28px;
+      font-family: var(--font-stack);
+      font-size: 1.15rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 0 15px var(--accent-glow);
+      transition: all 0.15s ease;
+    }
+
+    .dispense-btn-primary:hover {
+      background: var(--border-bright);
+      color: var(--bg-color);
+      box-shadow: 0 0 25px var(--border-bright);
+      transform: translateY(-2px);
+    }
+
+    .dispense-btn-primary:active {
+      transform: translateY(1px);
+    }
+
+    .dispense-btn-primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .quick-filter-tools {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .quick-search-input {
+      background: #000;
+      border: 1px solid var(--panel-border);
+      color: var(--text-bright);
+      font-family: var(--font-stack);
+      padding: 8px 12px;
+      font-size: 0.9rem;
+      min-width: 220px;
+      outline: none;
+    }
+
+    .quick-search-input:focus {
+      border-color: var(--border-bright);
+      box-shadow: 0 0 8px var(--accent-glow);
+    }
+
+    /* CHALLENGE CARD CONTAINER */
+    .challenge-output-stage {
+      position: relative;
+      margin-bottom: 30px;
+    }
+
+    .challenge-card {
+      border: 3px double var(--border-bright);
+      background-color: var(--card-bg);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7);
+      padding: 0;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .challenge-card.conquered {
+      border-color: var(--conquered-color);
+    }
+
+    .card-title-bar {
+      background-color: var(--card-header);
+      border-bottom: 2px solid var(--panel-border);
+      padding: 12px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .card-game-heading {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: var(--text-bright);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .card-game-year {
+      font-size: 0.9rem;
+      border: 1px solid var(--panel-border);
+      padding: 2px 8px;
+      color: var(--text-dim);
+    }
+
+    .card-tier-pill {
+      font-size: 0.8rem;
+      padding: 3px 10px;
+      border: 1px solid var(--border-bright);
+      color: var(--border-bright);
+      background: rgba(0,0,0,0.4);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .conquered-status-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.85rem;
+      font-weight: bold;
+      padding: 4px 10px;
+      border: 1px solid var(--panel-border);
+      color: var(--text-dim);
+    }
+
+    .conquered-status-indicator.is-conquered {
+      border-color: var(--conquered-color);
+      background-color: var(--conquered-bg);
+      color: var(--conquered-color);
+      box-shadow: 0 0 10px rgba(56, 239, 125, 0.3);
+    }
+
+    .card-body-content {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* Specs Matrix Grid */
+    .specs-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 12px;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--panel-border);
+      padding: 14px;
+    }
+
+    .spec-item {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .spec-label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      letter-spacing: 1px;
+    }
+
+    .spec-value {
+      font-size: 0.92rem;
+      color: var(--text-bright);
+      font-weight: bold;
+    }
+
+    /* Main Challenge Sections */
+    .challenge-section-block {
+      border-left: 3px solid var(--border-bright);
+      padding-left: 14px;
+      margin-top: 4px;
+    }
+
+    .challenge-section-block.why-block {
+      border-left-color: var(--text-dim);
+    }
+
+    .section-title-retro {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      font-weight: bold;
+      color: var(--border-bright);
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .challenge-section-block.why-block .section-title-retro {
+      color: var(--text-dim);
+    }
+
+    .section-text {
+      font-size: 0.96rem;
+      line-height: 1.6;
+      color: var(--text-main);
+    }
+
+    /* Tags container */
+    .tags-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .tech-tag {
+      background: rgba(0, 0, 0, 0.6);
+      border: 1px dashed var(--panel-border);
+      font-size: 0.78rem;
+      padding: 3px 8px;
+      color: var(--text-dim);
+    }
+
+    .tech-tag:hover {
+      border-color: var(--border-bright);
+      color: var(--text-bright);
+    }
+
+    /* Notes & Action Deck */
+    .notes-deck {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--panel-border);
+      padding: 12px;
+    }
+
+    .notes-textarea {
+      width: 100%;
+      background: #000;
+      border: 1px solid var(--panel-border);
+      color: var(--text-bright);
+      font-family: var(--font-stack);
+      font-size: 0.85rem;
+      padding: 8px 10px;
+      resize: vertical;
+      min-height: 55px;
+      outline: none;
+      margin-top: 6px;
+    }
+
+    .notes-textarea:focus {
+      border-color: var(--border-bright);
+    }
+
+    .card-footer-actions {
+      border-top: 1px dashed var(--panel-border);
+      padding-top: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .quick-links-group {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .link-retro {
+      color: var(--text-bright);
+      border: 1px solid var(--panel-border);
+      padding: 5px 10px;
+      font-size: 0.8rem;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(0,0,0,0.4);
+      transition: all 0.15s;
+    }
+
+    .link-retro:hover {
+      background: var(--card-header);
+      border-color: var(--border-bright);
+      text-shadow: 0 0 6px var(--accent-glow);
+    }
+
+    .action-buttons-group {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .btn-conquer {
+      border: 2px solid var(--conquered-color);
+      color: var(--conquered-color);
+      background: var(--conquered-bg);
+      font-weight: bold;
+      padding: 8px 16px;
+      font-size: 0.9rem;
+    }
+
+    .btn-conquer:hover {
+      background: var(--conquered-color);
+      color: #000;
+      box-shadow: 0 0 14px var(--conquered-color);
+    }
+
+    /* Rolling / Slot machine animation overlay */
+    .dispenser-rolling-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.88);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+      backdrop-filter: blur(2px);
+    }
+
+    .dispenser-rolling-overlay.active {
+      display: flex;
+    }
+
+    .slot-rolling-title {
+      font-size: 1.8rem;
+      font-weight: bold;
+      color: var(--border-bright);
+      text-shadow: 0 0 15px var(--border-bright);
+      animation: flicker 0.1s infinite;
+      text-align: center;
+      padding: 0 15px;
+    }
+
+    .slot-rolling-sub {
+      color: var(--text-dim);
+      font-size: 0.9rem;
+      margin-top: 10px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    @keyframes flicker {
+      0% { opacity: 0.95; }
+      50% { opacity: 0.80; }
+      100% { opacity: 1.0; }
+    }
+
+    /* TABS / DRAWER / MODAL FOR CODEX & CUSTOM */
+    .tab-nav-bar {
+      display: flex;
+      gap: 6px;
+      border-bottom: 2px solid var(--panel-border);
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+
+    .tab-nav-btn {
+      background: transparent;
+      border: 1px solid var(--panel-border);
+      border-bottom: none;
+      color: var(--text-dim);
+      padding: 8px 18px;
+      font-family: var(--font-stack);
+      font-size: 0.9rem;
+      cursor: pointer;
+      text-transform: uppercase;
+      transition: all 0.15s;
+    }
+
+    .tab-nav-btn:hover {
+      color: var(--text-bright);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .tab-nav-btn.active {
+      background: var(--card-bg);
+      color: var(--text-bright);
+      border-color: var(--border-bright);
+      font-weight: bold;
+      position: relative;
+    }
+
+    .tab-nav-btn.active::after {
+      content: "";
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: var(--card-bg);
+    }
+
+    /* Library / Codex Table View */
+    .codex-view-container {
+      display: none;
+      background: var(--card-bg);
+      border: 2px solid var(--panel-border);
+      padding: 18px;
+      margin-bottom: 25px;
+    }
+
+    .codex-view-container.active {
+      display: block;
+    }
+
+    .codex-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+
+    .codex-table-wrapper {
+      max-height: 520px;
+      overflow-y: auto;
+      border: 1px solid var(--panel-border);
+    }
+
+    .codex-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      text-align: left;
+    }
+
+    .codex-table th {
+      background: var(--card-header);
+      color: var(--text-bright);
+      padding: 8px 12px;
+      border-bottom: 2px solid var(--panel-border);
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+
+    .codex-table td {
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--panel-border);
+      color: var(--text-main);
+    }
+
+    .codex-table tr:hover td {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-bright);
+      cursor: pointer;
+    }
+
+    .codex-table tr.conquered-row td {
+      color: var(--conquered-color);
+    }
+
+    /* Modal Styling */
+    .retro-modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.85);
+      z-index: 2000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .retro-modal-backdrop.open {
+      display: flex;
+    }
+
+    .retro-modal {
+      background: var(--card-bg);
+      border: 2px solid var(--border-bright);
+      max-width: 680px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 0 35px var(--accent-glow);
+    }
+
+    .modal-header {
+      background: var(--card-header);
+      padding: 10px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid var(--panel-border);
+    }
+
+    .modal-title {
+      font-weight: bold;
+      color: var(--text-bright);
+      font-size: 1.1rem;
+    }
+
+    .modal-body {
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .form-group label {
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+    }
+
+    .form-control {
+      background: #000;
+      border: 1px solid var(--panel-border);
+      color: var(--text-bright);
+      font-family: var(--font-stack);
+      padding: 7px 10px;
+      font-size: 0.9rem;
+      outline: none;
+    }
+
+    .form-control:focus {
+      border-color: var(--border-bright);
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .modal-footer {
+      border-top: 1px solid var(--panel-border);
+      padding: 12px 18px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    /* Toast Notification */
+    .retro-toast {
+      position: fixed;
+      bottom: 25px;
+      right: 25px;
+      background: var(--card-header);
+      border: 2px solid var(--border-bright);
+      color: var(--text-bright);
+      padding: 12px 20px;
+      font-size: 0.9rem;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+      z-index: 3000;
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.25s ease;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      pointer-events: none;
+    }
+
+    .retro-toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    /* Footer / Keyboard shortcuts */
+    footer.retro-footer {
+      border-top: 1px dashed var(--panel-border);
+      padding-top: 16px;
+      margin-top: 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      font-size: 0.8rem;
+      color: var(--text-dim);
+    }
+
+    .key-badge {
+      display: inline-block;
+      border: 1px solid var(--panel-border);
+      padding: 1px 6px;
+      background: rgba(0,0,0,0.5);
+      color: var(--text-bright);
+      font-size: 0.75rem;
+      margin: 0 2px;
+    }
+
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar {
+      width: 9px;
+      height: 9px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #000;
+      border: 1px solid var(--panel-border);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--panel-border);
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--border-bright);
+    }
+  </style>
+</head>
+<body data-theme="amber">
+
+  <!-- CRT Visual Filters -->
+  <div class="crt-vignette"></div>
+  <div class="crt-scanlines"></div>
+
+  <div class="viewport-container">
+
+    <!-- BIOS / SYSTEM HEADER -->
+    <header class="bios-header">
+      <div class="header-top">
+        <div class="brand-title">
+          <span>⚡ SILICON GAUNTLET</span>
+          <span class="brand-badge">BIOS v3.31-ROM</span>
+        </div>
+        <div class="header-controls">
+          <div class="sys-time-box" id="rtc-clock">RTC: 1989-10-12 00:00:00</div>
+          <!-- Theme Switcher -->
+          <button class="btn-retro" id="theme-btn" title="Cycle Theme: Amber / Green / Turbo Vision / BIOS">
+            🎨 <span id="theme-name">AMBER P31</span>
+          </button>
+          <!-- Sound Toggle -->
+          <button class="btn-retro" id="sound-btn" title="Toggle Synthesized PC Speaker / Sound Effects">
+            🔊 SOUND: ON
+          </button>
+          <!-- Scanline Toggle -->
+          <button class="btn-retro" id="scanline-btn" title="Toggle Scanline Filter">
+            📺 CRT: ON
+          </button>
+        </div>
+      </div>
+
+      <!-- System Diagnostic / Conquest Monitor -->
+      <div class="bios-status-banner">
+        <div class="status-col">
+          <span class="status-label">HARDWARE FLEET PROFILE</span>
+          <span class="status-val" id="fleet-profile-desc">8088 XT / 486 DX2 / PENTIUM P200</span>
+        </div>
+        <div class="status-col">
+          <span class="status-label">BASE CONVENTIONAL MEMORY</span>
+          <span class="status-val">640 KB OK (EMS 4.0 / XMS 3.0 LOADED)</span>
+        </div>
+        <div class="status-col">
+          <span class="status-label">CHALLENGE CONQUEST RATIO</span>
+          <span class="status-val" id="conquest-stat-text">0 / 32 CONQUERED (0%)</span>
+          <div class="progress-bar-wrap">
+            <div class="progress-bar-fill" id="conquest-progress-fill"></div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- NAVIGATION TABS -->
+    <div class="tab-nav-bar">
+      <button class="tab-nav-btn active" id="tab-dispenser" onclick="switchView('dispenser')">
+        🎲 CHALLENGE DISPENSER
+      </button>
+      <button class="tab-nav-btn" id="tab-codex" onclick="switchView('codex')">
+        📖 FULL CODEX (<span id="codex-total-count">32</span>)
+      </button>
+      <button class="tab-nav-btn" id="tab-custom" onclick="openCustomModal()">
+        ➕ ADD CUSTOM CHALLENGE
+      </button>
+      <button class="tab-nav-btn" id="tab-data" onclick="openDataModal()">
+        💾 IMPORT / EXPORT JSON
+      </button>
+    </div>
+
+    <!-- MAIN VIEW: CHALLENGE DISPENSER -->
+    <main id="dispenser-view">
+
+      <!-- Hardware Tier Selector -->
+      <section class="tier-selector-container">
+        <div class="section-legend">
+          <span>[ SELECT TARGET ARCHITECTURE ]</span>
+        </div>
+        <div class="tier-buttons-grid">
+          <button class="tier-card-btn" data-tier="8088" onclick="selectTier('8088')">
+            <span class="tier-title">8088 / XT</span>
+            <span class="tier-subtitle">"The Crawl" (4.77 - 10 MHz)</span>
+            <div class="tier-chips">
+              <span class="tier-chip">Real Mode</span>
+              <span class="tier-chip">CGA / EGA</span>
+              <span class="tier-chip">PC Speaker</span>
+              <span class="tier-chip">≤640KB RAM</span>
+            </div>
+          </button>
+
+          <button class="tier-card-btn" data-tier="486" onclick="selectTier('486')">
+            <span class="tier-title">486 DX / DX2</span>
+            <span class="tier-subtitle">"The Sweet Spot" (33 - 66 MHz)</span>
+            <div class="tier-chips">
+              <span class="tier-chip">VGA Mode 13h</span>
+              <span class="tier-chip">DOS/4GW 32-bit</span>
+              <span class="tier-chip">Sound Blaster</span>
+              <span class="tier-chip">EMS / XMS</span>
+            </div>
+          </button>
+
+          <button class="tier-card-btn" data-tier="pentium" onclick="selectTier('pentium')">
+            <span class="tier-title">Pentium P75-P200</span>
+            <span class="tier-subtitle">"Raw Crunch" (75 - 200+ MHz)</span>
+            <div class="tier-chips">
+              <span class="tier-chip">Pipelined FPU</span>
+              <span class="tier-chip">VESA VBE 2.0</span>
+              <span class="tier-chip">Software 3D</span>
+              <span class="tier-chip">Win 3.11 / WinG</span>
+            </div>
+          </button>
+
+          <button class="tier-card-btn selected" data-tier="all" onclick="selectTier('all')">
+            <span class="tier-title">ALL TIERS</span>
+            <span class="tier-subtitle">"Wildcard Randomizer"</span>
+            <div class="tier-chips">
+              <span class="tier-chip">Full Library</span>
+              <span class="tier-chip">No Filter</span>
+              <span class="tier-chip">Cross-Generation</span>
+            </div>
+          </button>
+        </div>
+      </section>
+
+      <!-- Dispenser Control Deck -->
+      <section class="dispenser-control-deck">
+        <button class="dispense-btn-primary" id="dispense-btn" onclick="rollChallenge()">
+          <span>⚡ DISPENSE CHALLENGE</span>
+        </button>
+
+        <div class="quick-filter-tools">
+          <label class="btn-retro" style="cursor: pointer;">
+            <input type="checkbox" id="unconquered-only-toggle" onchange="toggleUnconqueredOnly(this.checked)" style="margin-right: 4px;">
+            UNCONQUERED ONLY
+          </label>
+          <input type="text" class="quick-search-input" id="quick-search" placeholder="Filter title / tag / chip..." oninput="handleSearchInput(this.value)">
+        </div>
+      </section>
+
+      <!-- Active Challenge Card -->
+      <section class="challenge-output-stage">
+        <!-- Rolling slot overlay during animation -->
+        <div class="dispenser-rolling-overlay" id="rolling-overlay">
+          <div class="slot-rolling-title" id="slot-rolling-text">SCANNING HARDWARE ROM...</div>
+          <div class="slot-rolling-sub">INTERRUPT VECTOR VERIFICATION IN PROGRESS</div>
+        </div>
+
+        <article class="challenge-card" id="active-challenge-card">
+          <!-- Populated dynamically via JS -->
+        </article>
+      </section>
+
+    </main>
+
+    <!-- CODEX VIEW: FULL DATABASE & SEARCH -->
+    <section class="codex-view-container" id="codex-view">
+      <div class="codex-toolbar">
+        <div class="brand-title" style="font-size: 1.2rem;">
+          <span>📚 ARCHIVAL CODEX & HARDWARE CHALLENGE LOG</span>
+        </div>
+        <div class="quick-filter-tools">
+          <button class="btn-retro" onclick="filterCodexTier('all')">ALL</button>
+          <button class="btn-retro" onclick="filterCodexTier('8088')">8088</button>
+          <button class="btn-retro" onclick="filterCodexTier('486')">486</button>
+          <button class="btn-retro" onclick="filterCodexTier('pentium')">PENTIUM</button>
+        </div>
+      </div>
+      <div class="codex-table-wrapper">
+        <table class="codex-table" id="codex-table">
+          <thead>
+            <tr>
+              <th style="width: 50px;">STATUS</th>
+              <th>GAME TITLE</th>
+              <th>YEAR</th>
+              <th>TIER</th>
+              <th>TARGET PLATFORM</th>
+              <th>PRIMARY HARDWARE CONSTRAINT</th>
+              <th style="text-align: right;">ACTION</th>
+            </tr>
+          </thead>
+          <tbody id="codex-table-body">
+            <!-- Populated dynamically -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- FOOTER WITH SHORTCUTS -->
+    <footer class="retro-footer">
+      <div>
+        <span>KEYBOARD SHORTCUTS:</span>
+        <span class="key-badge">SPACE</span> Roll
+        <span class="key-badge">C</span> Conquer
+        <span class="key-badge">T</span> Theme
+        <span class="key-badge">M</span> Mute Sound
+        <span class="key-badge">L</span> Codex
+      </div>
+      <div>
+        <span>AUTHENTIC IRON // CYCLE-ACCURATE BENCHMARKING</span>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- MODAL: ADD CUSTOM CHALLENGE -->
+  <div class="retro-modal-backdrop" id="custom-modal">
+    <div class="retro-modal">
+      <div class="modal-header">
+        <span class="modal-title">➕ REGISTER CUSTOM HARDWARE CHALLENGE</span>
+        <button class="btn-retro" onclick="closeCustomModal()">[X] CLOSE</button>
+      </div>
+      <form id="custom-challenge-form" onsubmit="handleCustomSubmit(event)">
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Game Title *</label>
+              <input type="text" class="form-control" name="title" required placeholder="e.g. Frontier: Elite II">
+            </div>
+            <div class="form-group">
+              <label>Release Year *</label>
+              <input type="number" class="form-control" name="year" required placeholder="1993" min="1978" max="2005">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Target Hardware Tier *</label>
+              <select class="form-control" name="tier" required>
+                <option value="8088">8088 / XT (The Crawl)</option>
+                <option value="486">486 DX/DX2 (The Sweet Spot)</option>
+                <option value="pentium">Pentium (Raw Crunch)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Platform / OS *</label>
+              <input type="text" class="form-control" name="platform" required placeholder="e.g. MS-DOS 6.22 (Real Mode)">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Memory Requirements *</label>
+              <input type="text" class="form-control" name="ram" required placeholder="e.g. 580 KB Base Conventional">
+            </div>
+            <div class="form-group">
+              <label>Video Mode *</label>
+              <input type="text" class="form-control" name="video" required placeholder="e.g. VGA Mode 13h (320x200 256c)">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Sound Device Target</label>
+              <input type="text" class="form-control" name="sound" placeholder="e.g. Sound Blaster 16 / Roland MT-32">
+            </div>
+            <div class="form-group">
+              <label>Storage / Media</label>
+              <input type="text" class="form-control" name="storage" placeholder="e.g. 3.5-inch 1.44MB Floppy or HDD">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>The Hardware Challenge (The Feat) *</label>
+            <textarea class="form-control" name="hardwareChallenge" required rows="3" placeholder="Explain the exact tuning, CONFIG.SYS optimization, speed patch, or hardware survival feat..."></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>Why It Tests This Chip (Architecture Stress) *</label>
+            <textarea class="form-control" name="whyItTests" required rows="3" placeholder="Explain the technical architectural bottleneck (bus contention, real vs protected mode, FPU, timer ticks, unchained Mode X, etc.)..."></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>Tags (Comma-separated)</label>
+            <input type="text" class="form-control" name="tags" placeholder="CONFIG.SYS, Mode X, FPU, MT-32">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-retro" onclick="closeCustomModal()">CANCEL</button>
+          <button type="submit" class="btn-retro active">SAVE TO DATABASE</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: DATA IMPORT / EXPORT -->
+  <div class="retro-modal-backdrop" id="data-modal">
+    <div class="retro-modal">
+      <div class="modal-header">
+        <span class="modal-title">💾 PERSISTENCE & DATA MANAGEMENT</span>
+        <button class="btn-retro" onclick="closeDataModal()">[X] CLOSE</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 0.85rem; color: var(--text-dim);">
+          Export your entire active challenge database, including custom added titles, conquered marks, and personal notes as raw JSON, or import backups.
+        </p>
+
+        <div class="form-group">
+          <label>DATABASE JSON DUMP / IMPORT BUFFER</label>
+          <textarea class="form-control" id="json-data-buffer" rows="10" style="font-size: 0.75rem;"></textarea>
+        </div>
+
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button class="btn-retro" onclick="exportDataToBuffer()">EXPORT ACTIVE STATE</button>
+          <button class="btn-retro" onclick="downloadJSONFile()">DOWNLOAD .JSON FILE</button>
+          <button class="btn-retro" onclick="importFromBuffer()">IMPORT FROM BUFFER</button>
+          <button class="btn-retro" style="border-color: var(--danger-color); color: var(--danger-color);" onclick="resetToFactoryROM()">RESET FACTORY ROM</button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-retro" onclick="closeDataModal()">CLOSE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div class="retro-toast" id="retro-toast">
+    <span id="toast-message">NOTIFICATION</span>
+  </div>
+
+  <!-- JAVASCRIPT: ENGINE & SOUND SYNTHESIS -->
+  <script>
+    /* ==========================================================================
+       BUILT-IN CURATED DATABASE (32 AUTHENTIC RETRO TITLES)
+       ========================================================================== */
+    const FACTORY_CHALLENGES = [
+      // ---------------- 8088 / XT (The Crawl) ----------------
+      {
+        id: "sopwith-1984",
+        title: "Sopwith",
+        year: 1984,
+        tier: "8088",
+        tierLabel: "8088 / XT (The Crawl)",
+        platform: "IBM PC-DOS 2.0+ (Real Mode)",
+        specs: {
+          ram: "128 KB Base RAM",
+          video: "CGA (320x200 4-Color or Composite NTSC)",
+          sound: "PC Speaker (PIT 8253 timer pulse)",
+          storage: "360 KB 5.25\" Floppy"
+        },
+        hardwareChallenge: "Run on authentic 4.77 MHz iron (or throttle ESP32 cycle governor). Must achieve authentic flight physics without the infamous 'Bogue Bug' runaway acceleration caused by CPU cycles outrunning the PIT interrupt loop.",
+        whyItTests: "The flight model relies on non-calibrated CPU cycle timing delays. Any clock speed exceeding 4.77 MHz (like an 8 MHz or 10 MHz Turbo XT) causes the biplane to violently slam into terrain instantly, perfectly demonstrating unthrottled bus timing bugs.",
+        tags: ["CPU Timing Loop", "CGA Composite", "PC Speaker", "Turbo Button Test"]
+      },
+      {
+        id: "digger-1983",
+        title: "Digger",
+        year: 1983,
+        tier: "8088",
+        tierLabel: "8088 / XT (The Crawl)",
+        platform: "IBM PC Booter / DOS 2.0 (Real Mode)",
+        specs: {
+          ram: "64 KB - 128 KB",
+          video: "CGA 320x200 Palette 1 (Cyan/Magenta/White)",
+          sound: "PC Speaker PWM Polyphony Emulation",
+          storage: "Bootable Floppy Disk"
+        },
+        hardwareChallenge: "Hook into pure 8088 INT 08h timer interrupts. Ensure the dynamic audio playback engine ('Popcorn' tune) does not drop pitch or desync when Nobbin monster AI pathfinding triggers simultaneously.",
+        whyItTests: "Windmill Software directly reprogrammed the Intel 8253 Programmable Interval Timer to output multi-channel square wave polyphony via PC Speaker while calculating 2D physics in a tight real-mode loop, completely saturating 4.77 MHz instruction throughput.",
+        tags: ["INT 08h", "Timer PIT 8253", "PC Booter", "PWM Audio"]
+      },
+      {
+        id: "prince-of-persia-1989",
+        title: "Prince of Persia",
+        year: 1989,
+        tier: "8088",
+        tierLabel: "8088 / XT (The Crawl)",
+        platform: "MS-DOS 3.3 (Real Mode)",
+        specs: {
+          ram: "512 KB Conventional RAM",
+          video: "CGA / EGA 16-color (320x200)",
+          sound: "AdLib OPL2 or PC Speaker",
+          storage: "720 KB 3.5\" or Dual 360 KB Floppies"
+        },
+        hardwareChallenge: "Tune CONFIG.SYS buffers to run Jordan Mechner's rotoscoped masterpiece on a bare 8088 without disk thrashing during dynamic guard sword-fight animations.",
+        whyItTests: "Mechner implemented a custom dynamic memory manager in 8086 assembly to squeeze hundreds of fluid rotoscoped animation frames into sub-512KB conventional memory. Heavy frame caching tests real-mode segment boundaries and BIOS disk read speeds.",
+        tags: ["Rotoscoping", "Conventional RAM", "EGA 16-Color", "Real Mode Segmenting"]
+      },
+      {
+        id: "alley-cat-1984",
+        title: "Alley Cat",
+        year: 1984,
+        tier: "8088",
+        tierLabel: "8088 / XT (The Crawl)",
+        platform: "IBM PC Booter (Direct BIOS)",
+        specs: {
+          ram: "64 KB RAM",
+          video: "CGA 320x200 4-Color (Palette 1 High-Intensity)",
+          sound: "PC Speaker 1-bit Beeps",
+          storage: "Single-sided 160KB/360KB Diskette"
+        },
+        hardwareChallenge: "Boot directly from bare silicon without DOS. Tune CGA composite monitor artifacting to achieve true 16-color display on an authentic NTSC color composite CRT monitor instead of magenta/cyan.",
+        whyItTests: "Uses IBM PC Booter architecture with direct hardware register access. It bypasses DOS entirely, writing raw pixel words directly to video segment 0xB800:0000 and relying on NTSC color burst phase shift artifacting.",
+        tags: ["PC Booter", "Segment 0xB800", "CGA Composite Artifacting", "No-DOS"]
+      },
+      {
+        id: "kings-quest-1-1984",
+        title: "King's Quest: Quest for the Crown",
+        year: 1984,
+        tier: "8088",
+        tierLabel: "8088 / XT (The Crawl)",
+        platform: "IBM PC / PCjr / Tandy 1000 Booter",
+        specs: {
+          ram: "128 KB RAM",
+          video: "PCjr / Tandy 160x200 or CGA 320x200",
+          sound: "Tandy / PCjr 3-voice SN76496 or PC Speaker",
+          storage: "360 KB Floppy Booter"
+        },
+        hardwareChallenge: "Configure Sierra's AGI (Adventure Game Interpreter) on real XT iron to redraw vector background line-art and flood fills without visible screen tearing or sluggish parser input buffering.",
+        whyItTests: "The AGI engine stores room art as a series of draw commands (lines, polygons, fills) executed dynamically at 4.77 MHz. Slow memory bus speeds make vector polygon rasterization visibly crawl on stock 8088 chips.",
+        tags: ["AGI Engine", "Vector Rasterization", "Tandy Sound", "Sierra"]
+      },
+      {
+        id: "ms-flight-simulator-2-1984",
+        title: "Microsoft Flight Simulator 2.0",
+        year: 1984,
+        tier: "8088",
+        tierLabel: "8088 / XT (The Crawl)",
+        platform: "PC Booter / DOS 2.0",
+        specs: {
+          ram: "128 KB RAM",
+          video: "CGA 320x200 / Composite Mode",
+          sound: "PC Speaker Stall Warning Buzzes",
+          storage: "360 KB 5.25\" Floppy"
+        },
+        hardwareChallenge: "Simulate runway takeoff from Meigs Field, Chicago with 3D wireframe horizon and runway rendering without an Intel 8087 numeric math coprocessor.",
+        whyItTests: "Bruce Artwick's math routines use hand-optimized 16-bit fixed-point integer trigonometry. Without an 8087 FPU, the 8088 must compute every 3D coordinate transformation in raw ALU instructions, yielding 2 to 5 FPS on authentic 4.77 MHz iron.",
+        tags: ["Fixed-Point 3D", "No-8087 Coprocessor", "ALU Stress", "Meigs Field"]
+      },
+      {
+        id: "commander-keen-1-1990",
+        title: "Commander Keen: Marooned on Mars",
+        year: 1990,
+        tier: "8088",
+        tierLabel: "8088 / XT (The Crawl)",
+        platform: "MS-DOS 3.3 (Real Mode)",
+        specs: {
+          ram: "512 KB RAM",
+          video: "EGA 320x200 16-Color",
+          sound: "PC Speaker Sound Effects",
+          storage: "720 KB Floppy / Hard Drive"
+        },
+        hardwareChallenge: "Run John Carmack's legendary 'Adaptive Tile Refresh' engine on a real 8088 with genuine 8-bit ISA EGA card without frame dropping or horizontal panning tearing.",
+        whyItTests: "Before Keen, smooth horizontal scrolling on IBM PC was considered impossible due to slow EGA video RAM bus latency. Carmack re-engineered EGA panning registers and dirty-rect tile caching to pull off 60fps scrolling on a 4.77 MHz XT.",
+        tags: ["Adaptive Tile Refresh", "EGA 16-Color", "John Carmack", "ISA Latency"]
+      },
+      {
+        id: "ancient-art-of-war-1984",
+        title: "The Ancient Art of War",
+        year: 1984,
+        tier: "8088",
+        tierLabel: "8088 / XT (The Crawl)",
+        platform: "IBM DOS 2.1+",
+        specs: {
+          ram: "128 KB Conventional RAM",
+          video: "CGA 320x200 4-Color",
+          sound: "PC Speaker Tactical Horns",
+          storage: "360 KB Floppy"
+        },
+        hardwareChallenge: "Command full-scale tactical battlefield skirmishes with multiple barbarian squads colliding without CPU pipeline starvation during close-quarters squad combat animation loops.",
+        whyItTests: "One of the earliest real-time tactical AI wargames on PC. Pathfinding and squad AI checks on a 4.77 MHz chip with only 8 registers (AX, BX, CX, DX, SI, DI, BP, SP) pushes the 8088 to its absolute cycle limits.",
+        tags: ["Early RTS", "AI Pathfinding", "8-Bit Bus", "Register Scarcity"]
+      },
+      {
+        id: "california-games-1987",
+        title: "California Games",
+        year: 1987,
+        tier: "8088",
+        tierLabel: "8088 / XT (The Crawl)",
+        platform: "MS-DOS 3.2+",
+        specs: {
+          ram: "256 KB RAM",
+          video: "CGA 16-Color Composite or EGA",
+          sound: "PC Speaker Multi-voice Sampled Audio",
+          storage: "Dual 360 KB Floppies"
+        },
+        hardwareChallenge: "Configure half-pipe and surfing events with 1-bit PC Speaker digitized sound effects playing without pausing game sprite physics updates.",
+        whyItTests: "Epyx pushed digitized PCM voice over the single-bit PC Speaker using high-frequency timer interrupts. Interrupt overhead on an 8088 can consume over 60% of total CPU cycles, leaving barely any cycles for sprite blitting.",
+        tags: ["Sampled PWM Sound", "Interrupt Load", "Epyx", "CGA Composite"]
+      },
+      {
+        id: "planet-x3-2019",
+        title: "Planet X3 (Modern Retro Feat)",
+        year: 2019,
+        tier: "8088",
+        tierLabel: "8088 / XT (The Crawl)",
+        platform: "MS-DOS 3.3 - 6.22 (Real Mode)",
+        specs: {
+          ram: "256 KB - 512 KB Conventional",
+          video: "CGA / EGA / VGA / Tandy Auto-Detect",
+          sound: "PC Speaker, AdLib, Tandy 3-Voice",
+          storage: "720 KB Floppy or CompactFlash XT-IDE"
+        },
+        hardwareChallenge: "Run David Murray's (The 8-Bit Guy) modern 8088 RTS game. Test dynamic video card detection and smooth scrolling across a massive 256x256 map grid on authentic 4.77 MHz silicon.",
+        whyItTests: "Written specifically as a modern benchmark for real 8088 microprocessors. Stresses 640KB memory segmentation, banking, and real-time audio playback while handling hundreds of active sprite entities.",
+        tags: ["Modern 8088 Benchmark", "XT-IDE", "Tandy Auto-Sensing", "Memory Paging"]
+      },
+      {
+        id: "castle-adventure-1984",
+        title: "Castle Adventure",
+        year: 1984,
+        tier: "8088",
+        tierLabel: "8088 / XT (The Crawl)",
+        platform: "MS-DOS 2.0 (Compiled BASIC)",
+        specs: {
+          ram: "128 KB Conventional RAM",
+          video: "MDA / CGA Monochrome or Color 80x25 Text Mode",
+          sound: "PC Speaker Clicks & Bleeps",
+          storage: "160 KB / 360 KB Floppy"
+        },
+        hardwareChallenge: "Survive Kevin Bales' dungeon crawler in pure 80x25 ASCII text mode. Verify that direct memory writes to segment 0xB000 (Monochrome) and 0xB800 (Color) do not produce 'CGA snow' artifacts.",
+        whyItTests: "CGA video hardware suffers from severe memory bus contention: reading or writing to display RAM while the cathode ray is scanning causes bright white flecks ('snow'). Games had to synchronize writes with the horizontal/vertical retrace interval.",
+        tags: ["CGA Snow Avoidance", "Text Mode 80x25", "Segment 0xB000", "Vertical Retrace"]
+      },
+
+      // ---------------- 486 (The Sweet Spot) ----------------
+      {
+        id: "wing-commander-1990",
+        title: "Wing Commander",
+        year: 1990,
+        tier: "486",
+        tierLabel: "486 (The Sweet Spot)",
+        platform: "MS-DOS 4.01 / 5.0 (Real Mode)",
+        specs: {
+          ram: "640 KB Base Conventional (Needs ~585 KB Free)",
+          video: "VGA 320x200 256 Colors (Mode 13h)",
+          sound: "Roland MT-32 (LAPC-I) or Sound Blaster Pro",
+          storage: "High-Density 1.2MB / 1.44MB Floppies or MFM/IDE HDD"
+        },
+        hardwareChallenge: "The classic 'Origin uncalibrated loop' trial! On a 486DX2-66 or DX4-100, the Kilrathi fighters fly at relativistic warp speeds. Must use hardware Turbo button toggle or software cycle slow-downs, while freeing up >585 KB conventional RAM.",
+        whyItTests: "Chris Roberts designed the 2D sprite scaling routine with zero hardware timer throttling; game speed is directly tied to CPU instruction execution rate. A 486 executes instructions 10-20x faster per clock than a 286, making dogfights impossible without clock reduction.",
+        tags: ["Turbo Button Throttle", "Conventional RAM", "Roland MT-32", "Sprite Scaling"]
+      },
+      {
+        id: "doom-1993",
+        title: "Doom",
+        year: 1993,
+        tier: "486",
+        tierLabel: "486 (The Sweet Spot)",
+        platform: "MS-DOS 5.0 - 6.22 (DOS/4GW 32-bit Protected Mode)",
+        specs: {
+          ram: "4 MB RAM (8 MB Recommended)",
+          video: "VGA 320x200 Mode Y (Unchained Planar)",
+          sound: "Sound Blaster 16 (OPL3 FM / General MIDI) or GUS",
+          storage: "IDE / SCSI HDD (Approx 15 MB Free)"
+        },
+        hardwareChallenge: "Achieve locked 35 FPS in timedemo benchmark: `doom -timedemo demo3`. Resolve Sound Blaster IRQ/DMA address conflicts with motherboard COM ports and optimize L2 cache wait states in AMI BIOS.",
+        whyItTests: "Carmack's BSP tree and Mode Y planar VGA rendering demand sustained 32-bit integer arithmetic and fast L1/L2 cache line fills. A 486DX-33 achieves ~25-30 FPS, while a DX2-66 hits the holy grail 35 FPS cap. Proves the power of 8KB L1 cache and zero wait-state VL-Bus/PCI.",
+        tags: ["DOS/4GW", "Mode Y Planar", "35 FPS Cap", "L2 Cache Tuning", "Sound Blaster DMA"]
+      },
+      {
+        id: "ultima-vii-1992",
+        title: "Ultima VII: The Black Gate",
+        year: 1992,
+        tier: "486",
+        tierLabel: "486 (The Sweet Spot)",
+        platform: "MS-DOS 5.0 (Custom Real Mode Boot Disk)",
+        specs: {
+          ram: "2 MB RAM, but STRICTLY requires ≥595 KB Free Base RAM",
+          video: "VGA 320x200 256 Colors",
+          sound: "Roland MT-32 / LAPC-I or AdLib OPL2",
+          storage: "IDE HDD (Install from 3.5\" HD Floppies)"
+        },
+        hardwareChallenge: "Overcome the infamous 'Voodoo Memory Manager'! Create a bespoke clean MS-DOS boot floppy with ZERO HIMEM.SYS, ZERO EMM386, and zero TSR drivers, stripping mouse and CD drivers down to bare minimum to hit 595 KB conventional free memory.",
+        whyItTests: "Origin created a proprietary flat-model hack ('Voodoo') that directly entered unreal/flat mode from real mode without standard VCPI/DPMI memory managers. If HIMEM.SYS or EMM386 is present in CONFIG.SYS, the game instantly crashes with a memory fault.",
+        tags: ["Voodoo Memory Manager", "Unreal Mode", "Strict 595KB RAM", "Custom Boot Disk"]
+      },
+      {
+        id: "tie-fighter-1994",
+        title: "Star Wars: TIE Fighter",
+        year: 1994,
+        tier: "486",
+        tierLabel: "486 (The Sweet Spot)",
+        platform: "MS-DOS 6.22 (Real Mode with EMS 4.0)",
+        specs: {
+          ram: "4 MB RAM (Expanded EMS required)",
+          video: "VGA Mode 13h 320x200 (Gouraud shading)",
+          sound: "General MIDI (MPU-401) + Sound Blaster Digital",
+          storage: "3.5\" HD Floppy or CD-ROM Collector's Edition"
+        },
+        hardwareChallenge: "Configure EMM386.EXE with a pristine 64KB EMS Page Frame (`FRAME=E000` or `D000`) without conflicting with network ROMs or SCSI BIOS, while enjoying dynamic interactive iMUSE MIDI transitions.",
+        whyItTests: "Calculates full 3D polygonal starfighter meshes using 486 integer math while constantly bank-switching texture data and digital sound samples through the 64KB expanded memory page frame window.",
+        tags: ["EMS 4.0 Page Frame", "iMUSE MIDI", "Gouraud 3D", "MPU-401"]
+      },
+      {
+        id: "duke-nukem-3d-1996",
+        title: "Duke Nukem 3D",
+        year: 1996,
+        tier: "486",
+        tierLabel: "486 (The Sweet Spot)",
+        platform: "MS-DOS 6.22 (DOS/4GW 32-bit Protected Mode)",
+        specs: {
+          ram: "8 MB RAM (16 MB Recommended)",
+          video: "VGA 320x200 256c (Mode 13h / VESA 640x480 option)",
+          sound: "Sound Blaster 16 / AWE32 or Gravis UltraSound",
+          storage: "IDE HDD (approx 40 MB Free Space)"
+        },
+        hardwareChallenge: "Tune Ken Silverman's Build Engine setup utility to achieve rock-solid 8-voice 16-bit 44.1 kHz digital mixing on Gravis UltraSound or Sound Blaster 16 without DMA buffer underflow stuttering during heavy explosive combat.",
+        whyItTests: "The Build engine performs complex non-Euclidean sector transformations, sloped floors, and voxel sprite lookups in a 32-bit flat memory model. It stresses 486 L2 cache and ISA bus DMA bandwidth when software sound mixing 8 simultaneous voice channels.",
+        tags: ["Build Engine", "Gravis UltraSound", "16-Bit DMA", "DOS/4GW"]
+      },
+      {
+        id: "strike-commander-1993",
+        title: "Strike Commander",
+        year: 1993,
+        tier: "486",
+        tierLabel: "486 (The Sweet Spot)",
+        platform: "MS-DOS 5.0+ (Real Mode / EMS)",
+        specs: {
+          ram: "4 MB Minimum (8 MB Strongly Advised), ≥590 KB Base",
+          video: "VGA 320x200 Texture-Mapped Gouraud 3D",
+          sound: "Roland LAPC-1 / MT-32 & Sound Blaster Dual Audio",
+          storage: "40+ MB HDD (Shipped on 8 High-Density Floppies!)"
+        },
+        hardwareChallenge: "The legendary '486 Killer'! Configure a dedicated multi-boot menu in CONFIG.SYS to clear 590 KB conventional RAM with EMS 4.0 enabled, and sustain playable 15+ FPS over mountain terrain dogfights on a 486DX-33.",
+        whyItTests: "Chris Roberts called it 'Real Virtuality'. It was the first consumer flight sim featuring fully textured and Gouraud-shaded 3D terrain and aircraft. It melted 386 systems and pushed stock 486DX chips to thermal throttling limits.",
+        tags: ["The 486 Killer", "Gouraud Shading", "EMS Allocation", "Extreme Floppy Install"]
+      },
+      {
+        id: "system-shock-1994",
+        title: "System Shock",
+        year: 1994,
+        tier: "486",
+        tierLabel: "486 (The Sweet Spot)",
+        platform: "MS-DOS 6.22 (DOS/4GW)",
+        specs: {
+          ram: "4 MB Minimum (8 MB for SVGA)",
+          video: "VGA 320x200 or VESA SVGA 640x480",
+          sound: "General MIDI / Sound Blaster AWE32",
+          storage: "Double-speed 2X CD-ROM + HDD"
+        },
+        hardwareChallenge: "Engage the high-resolution SVGA 640x480 mode on Citadel Station. Test if your 486DX2-66 motherboard has sufficient VESA Local Bus (VLB) or PCI bandwidth to survive 6-degrees-of-freedom physics calculations.",
+        whyItTests: "Looking Glass Technologies implemented true 6-DOF cameras with pitch, roll, sloped walls, gravity, and dynamic lighting. In 640x480 mode, the fill rate and texture mapping completely overwhelm standard ISA video cards, demanding VLB/PCI throughput.",
+        tags: ["6-DOF Engine", "VLB vs ISA", "SVGA 640x480", "Looking Glass"]
+      },
+      {
+        id: "descent-1995",
+        title: "Descent",
+        year: 1995,
+        tier: "486",
+        tierLabel: "486 (The Sweet Spot)",
+        platform: "MS-DOS 6.22 (DOS/4GW 32-bit)",
+        specs: {
+          ram: "4 MB RAM Minimum (8 MB Recommended)",
+          video: "VGA 320x200 256c",
+          sound: "Gravis UltraSound or Sound Blaster Pro",
+          storage: "IDE HDD + 2X CD-ROM"
+        },
+        hardwareChallenge: "Navigate zero-gravity lunar mine tunnels with full 360-degree rotational physics. Configure joystick hat-switch throttle and ensure the 486 internal L1 cache is set to Write-Back rather than Write-Through in BIOS.",
+        whyItTests: "Unlike Doom's 2.5D raycasting, Descent was a 100% full 3D polygonal environment with 6-DOF matrix rotations calculated entirely on the 486 CPU. L1 Write-Back cache dramatically speeds up vertex projection matrix multiplication.",
+        tags: ["Full 3D Polygons", "L1 Write-Back Cache", "Zero-G Physics", "BIOS Tuning"]
+      },
+      {
+        id: "the-7th-guest-1993",
+        title: "The 7th Guest",
+        year: 1993,
+        tier: "486",
+        tierLabel: "486 (The Sweet Spot)",
+        platform: "MS-DOS 5.0+ (Protected Mode 32-bit)",
+        specs: {
+          ram: "4 MB RAM (Needs SMARTDRV / XMS Caching)",
+          video: "VESA VBE 1.2 SVGA 640x320 / 640x480 256 Colors",
+          sound: "Sound Blaster Pro / 16 or Pro AudioSpectrum 16",
+          storage: "2X CD-ROM Drive (300 KB/s transfer rate)"
+        },
+        hardwareChallenge: "Configure MSCDEX.EXE and SMARTDRV disk caching to stream full-motion video (FMV) ghost sequences directly off the CD-ROM drive without audio crackle, frame freezing, or VESA video palette corruption.",
+        whyItTests: "One of the earliest games to require a CD-ROM drive and SVGA VESA VBE 1.2 driver. Stresses the MPC Level 2 hardware spec, ISA IDE CD-ROM interface throughput, and real-time video decompression algorithms.",
+        tags: ["CD-ROM Streaming", "MSCDEX", "VESA VBE 1.2", "MPC Level 2"]
+      },
+      {
+        id: "privateer-1993",
+        title: "Wing Commander: Privateer",
+        year: 1993,
+        tier: "486",
+        tierLabel: "486 (The Sweet Spot)",
+        platform: "MS-DOS 5.0 - 6.22 (Real Mode / EMS)",
+        specs: {
+          ram: "4 MB RAM, ≥590 KB Base Conventional RAM",
+          video: "VGA 320x200 256c Mode 13h",
+          sound: "Roland MT-32 / General MIDI + Sound Blaster Digital",
+          storage: "Floppy / CD-ROM + HDD"
+        },
+        hardwareChallenge: "Calibrate dual analog flight joysticks and tune QEMM 386 or MS-DOS `DOS=HIGH,UMB` to squeeze 590 KB free conventional memory while loading mouse drivers, CD-ROM drivers, and Sound Blaster TSRs simultaneously.",
+        whyItTests: "Extreme memory fragmentation test. Combines rich speech audio pack buffers, sprawling space base planetary SVGA artwork, and unthrottled real-mode polygon and sprite rendering.",
+        tags: ["Conventional RAM Squeeze", "UMB High Memory", "QEMM", "Speech Pack"]
+      },
+      {
+        id: "simcity-2000-1993",
+        title: "SimCity 2000 (DOS / Win 3.11)",
+        year: 1993,
+        tier: "486",
+        tierLabel: "486 (The Sweet Spot)",
+        platform: "MS-DOS 6.22 or Windows 3.11 for Workgroups",
+        specs: {
+          ram: "4 MB Minimum (8 MB Strongly Advised for Large Maps)",
+          video: "SVGA 640x480 256 Colors",
+          sound: "Sound Blaster 16 or Pro Audio Spectrum",
+          storage: "IDE HDD"
+        },
+        hardwareChallenge: "Build a thriving metropolis to 500,000+ population on a massive 128x128 grid in SVGA. Verify that annual simulation tick calculations do not lock up the OS or run out of Windows 3.11 GDI/User heap resources.",
+        whyItTests: "The simulation engine runs intensive multi-layered cellular automata algorithms (traffic routing, crime diffusion, water pipe pressure). On a 486, this stresses integer ALU performance, RAM bus bandwidth, and WinG graphic bitblt calls.",
+        tags: ["Cellular Automata", "SVGA 640x480", "Windows 3.11 GDI", "Simulation Tick"]
+      },
+
+      // ---------------- Pentium (Raw Crunch) ----------------
+      {
+        id: "quake-1996",
+        title: "Quake",
+        year: 1996,
+        tier: "pentium",
+        tierLabel: "Pentium (Raw Crunch)",
+        platform: "MS-DOS 6.22 (DOS/4GW 32-bit Protected Mode)",
+        specs: {
+          ram: "16 MB RAM (Minimum 8 MB)",
+          video: "VGA 320x200 or VESA VBE 2.0 (360x480 / 640x480)",
+          sound: "Sound Blaster 16 / AWE32 or Gravis UltraSound",
+          storage: "EIDE / SCSI HDD + 4X CD-ROM (Redbook Audio)"
+        },
+        hardwareChallenge: "The ultimate 1990s CPU benchmark! Execute the official benchmark command: `quake -nosound -timedemo demo1` and record average framerate. Enable MTRR (Memory Type Range Registers) write-combining in DOS for maximum frame throughput.",
+        whyItTests: "John Carmack specifically hand-wrote the inner assembly loop using the Pentium's pipelined Floating Point Unit (FPU). By interleaving integer perspective-correction rasterizer instructions with pipelined `FXCH` and `FLD` operations, it runs 3x faster on genuine Intel Pentiums than on 486 or Cyrix/AMD 5x86 chips.",
+        tags: ["Pipelined FPU", "Timedemo Benchmark", "Carmack Assembly", "MTRR Write-Combining"]
+      },
+      {
+        id: "need-for-speed-se-1996",
+        title: "The Need for Speed: Special Edition",
+        year: 1996,
+        tier: "pentium",
+        tierLabel: "Pentium (Raw Crunch)",
+        platform: "MS-DOS 6.22 / Windows 95 (DirectX 2.0)",
+        specs: {
+          ram: "16 MB RAM (32 MB for Windows 95)",
+          video: "SVGA VESA VBE 2.0 (640x480 256 Colors)",
+          sound: "Sound Blaster AWE32 / Wave Blaster",
+          storage: "4X CD-ROM + EIDE HDD"
+        },
+        hardwareChallenge: "Activate 640x480 SVGA mode with full cockpit view and rearview mirror rendering active. Must use UniVBE (Scitech Display Doctor) TSR to provide a high-speed Linear Frame Buffer (LFB) on your PCI graphic card.",
+        whyItTests: "Software-renders high-detail exotic supercars, road texture perspective, and dual-viewport rearview mirror rasterization. Without a linear frame buffer, banked VESA 64KB window swapping stalls the Pentium CPU pipeline.",
+        tags: ["VESA VBE 2.0 LFB", "UniVBE", "Rearview Dual-Render", "PCI Throughput"]
+      },
+      {
+        id: "blood-1997",
+        title: "Blood",
+        year: 1997,
+        tier: "pentium",
+        tierLabel: "Pentium (Raw Crunch)",
+        platform: "MS-DOS 6.22 (DOS/4GW 32-bit)",
+        specs: {
+          ram: "16 MB RAM (32 MB for High Res)",
+          video: "SVGA 800x600 256 Colors (Build Engine)",
+          sound: "Sound Blaster AWE32 or GUS PnP",
+          storage: "4X CD-ROM + HDD"
+        },
+        hardwareChallenge: "Survive intense zombie horde battles at SVGA 800x600 resolution without frame dips below 30 FPS. Test Q-Sound 3D audio positional software mixing on a Sound Blaster 16.",
+        whyItTests: "Monolith pushed Ken Silverman's Build engine to its absolute architectural zenith with voxel items, 3D sloped sectors, dynamic lighting, and massive enemy swarms. At 800x600, it demands enormous Pentium memory bus bandwidth and L2 cache capacity.",
+        tags: ["Build Engine Zenith", "SVGA 800x600", "Voxel Sprites", "Q-Sound 3D"]
+      },
+      {
+        id: "tomb-raider-1996",
+        title: "Tomb Raider",
+        year: 1996,
+        tier: "pentium",
+        tierLabel: "Pentium (Raw Crunch)",
+        platform: "MS-DOS 6.22 (DOS/4GW 32-bit)",
+        specs: {
+          ram: "16 MB RAM",
+          video: "SVGA 640x480 Software 3D (Pre-3Dfx Glide)",
+          sound: "Sound Blaster 16 / AWE32 (Redbook Audio CD)",
+          storage: "4X CD-ROM + HDD"
+        },
+        hardwareChallenge: "Run Lara Croft through the Lost Valley T-Rex encounter in pure software rendering mode at 640x480 resolution before installing any 3Dfx Voodoo Glide accelerator patches.",
+        whyItTests: "Core Design's software renderer relied entirely on the Pentium's superscalar dual-pipeline integer execution (U-pipe and V-pipe pairing) for polygonal clipping, span drawing, and perspective-correct texture mapping without 3D hardware.",
+        tags: ["Pure Software 3D", "Pre-3Dfx Era", "Superscalar Pairing", "Span Clipping"]
+      },
+      {
+        id: "interstate-76-1997",
+        title: "Interstate '76",
+        year: 1997,
+        tier: "pentium",
+        tierLabel: "Pentium (Raw Crunch)",
+        platform: "Windows 95 / Win 3.11 32-bit (DirectX 3.0)",
+        specs: {
+          ram: "16 MB RAM Minimum (32 MB Strongly Advised)",
+          video: "SVGA 640x480 Software / Direct3D",
+          sound: "DirectSound 16-bit Acid Funk CD Audio",
+          storage: "4X CD-ROM + HDD (Over 300 MB Installed)"
+        },
+        hardwareChallenge: "Engage in vehicular combat across the Southwestern desert. Test pure software 3D suspension physics, turret aiming, and vehicle damage deformation on a 166 MHz or 200 MHz Pentium.",
+        whyItTests: "Uses an enhanced derivative of the MechWarrior 2 3D engine. Complex tire physics, ballistic missile trajectories, and huge draw distances crippled first-generation Pentium 75-90 MHz processors.",
+        tags: ["Vehicle Physics", "High Draw Distance", "P166 Requirement", "Heavy Math"]
+      },
+      {
+        id: "screamer-2-1996",
+        title: "Screamer 2",
+        year: 1996,
+        tier: "pentium",
+        tierLabel: "Pentium (Raw Crunch)",
+        platform: "MS-DOS 6.22 (DOS/4GW 32-bit)",
+        specs: {
+          ram: "16 MB RAM",
+          video: "VESA VBE 2.0 SVGA 640x480 256 Colors",
+          sound: "Sound Blaster 16 / AWE32 / Ensoniq",
+          storage: "4X CD-ROM + HDD"
+        },
+        hardwareChallenge: "Push Milestone's arcade rally racer to 640x480 high-detail software mode. Verify that your Pentium L2 pipeline cache latency does not induce stuttering around tight muddy hairpins.",
+        whyItTests: "One of the most graphically demanding pure software 3D arcade racers ever coded for DOS. Heavy texture filtering, particle effects, and particle dust kicked up behind cars saturate Pentium L1/L2 cache lines.",
+        tags: ["Software 3D Rally", "L2 Cache Latency", "Particle Sprites", "VESA 640x480"]
+      },
+      {
+        id: "mechwarrior-2-pentium-1995",
+        title: "MechWarrior 2 (Pentium Edition)",
+        year: 1995,
+        tier: "pentium",
+        tierLabel: "Pentium (Raw Crunch)",
+        platform: "MS-DOS 6.22 / Windows 95",
+        specs: {
+          ram: "16 MB RAM",
+          video: "SVGA VESA 640x480 (Intel Pentium Optimized)",
+          sound: "Sound Blaster 16 / WaveTable / AWE32",
+          storage: "Double/Quad-Speed CD-ROM + HDD"
+        },
+        hardwareChallenge: "Deploy a Timber Wolf / Mad Cat in the thermal volcanic plains. Verify that high-resolution 640x480 texture mapping and dynamic wireframe HUD rendering execute with zero micro-stuttering.",
+        whyItTests: "Activision released a specialized OEM edition bundled specifically with Intel Pentium processors, utilizing hand-coded assembly routines taking advantage of the Pentium's branch prediction and superscalar pipeline pairing.",
+        tags: ["Intel OEM Edition", "Branch Prediction", "Mad Cat 3D", "SVGA Cockpit"]
+      },
+      {
+        id: "unreal-software-1998",
+        title: "Unreal (Software Renderer Fallback)",
+        year: 1998,
+        tier: "pentium",
+        tierLabel: "Pentium (Raw Crunch)",
+        platform: "Windows 95 / 98 (DirectX 5.0)",
+        specs: {
+          ram: "32 MB RAM (64 MB Recommended)",
+          video: "640x480 Software Renderer (MMX Enhanced)",
+          sound: "DirectSound3D / AWE64 / Yamaha XG",
+          storage: "8X CD-ROM + 500 MB HDD Space"
+        },
+        hardwareChallenge: "The ultimate trial for a Pentium 200 or Pentium MMX! Boot the game with `-nohardware` to force Tim Sweeney's legendary software renderer. Traverse the Vortex Rikers exit into the lush exterior Na Pali valley.",
+        whyItTests: "Tim Sweeney spent 3.5 years writing the Unreal software rasterizer. It featured colored volumetric lighting, translucent water, and bi-linear texture filtering in software, requiring Intel MMX SIMD instructions to run at all.",
+        tags: ["Tim Sweeney Engine", "MMX SIMD", "-nohardware Fallback", "Colored Lighting"]
+      },
+      {
+        id: "fallout-1997",
+        title: "Fallout",
+        year: 1997,
+        tier: "pentium",
+        tierLabel: "Pentium (Raw Crunch)",
+        platform: "MS-DOS 6.22 / Windows 95 (DOS32A / DOS4GW)",
+        specs: {
+          ram: "16 MB RAM (32 MB for Large Saves)",
+          video: "SVGA 640x480 256 Colors",
+          sound: "Sound Blaster 16 / AWE32 / General MIDI (MPU-401)",
+          storage: "4X CD-ROM + 500 MB HDD"
+        },
+        hardwareChallenge: "Run the rare pure MS-DOS executable of Fallout on high-end Pentium hardware. Replace the standard DOS/4GW extender with DOS32A to optimize memory paging and prevent random crash-to-desktop during turn-based combat rounds.",
+        whyItTests: "Features a massive 640x480 hex-grid isometric engine with thousands of art frames and extensive script logic. Stresses virtual memory allocation and page swapping when loading large post-apocalyptic settlement maps.",
+        tags: ["DOS32A Extender", "Hex-Grid Isometric", "Page Swapping", "Rare DOS Port"]
+      },
+      {
+        id: "jazz-jackrabbit-2-1998",
+        title: "Jazz Jackrabbit 2",
+        year: 1998,
+        tier: "pentium",
+        tierLabel: "Pentium (Raw Crunch)",
+        platform: "Windows 95 / 98 (DirectX 5.0)",
+        specs: {
+          ram: "16 MB RAM",
+          video: "DirectDraw 640x480 16-Bit Color",
+          sound: "DirectSound / Mod Music Tracker Player",
+          storage: "4X CD-ROM + HDD"
+        },
+        hardwareChallenge: "Fix the famous Borland Pascal / C++ 'Runtime Error 200' (Division by Zero in CRT unit delay calibration loop) on fast Pentium II/III or clocked-up Socket 7 Pentiums (>200 MHz), restoring smooth 60fps scrolling.",
+        whyItTests: "Borland's compiler CRT initialization loop counted how many iterations occurred in a single 55ms timer tick. On CPUs running faster than ~200 MHz, the 16-bit register overflowed into DX:AX causing an instant fatal Division by Zero crash before the game even started.",
+        tags: ["Runtime Error 200", "Borland CRT Patch", "60 FPS Platformer", "Clock Overflow"]
+      }
+    ];
+
+    /* ==========================================================================
+       APPLICATION STATE & PERSISTENCE
+       ========================================================================== */
+    const STORAGE_KEY = "SILICON_GAUNTLET_DB_V1";
+    const THEME_KEY = "SILICON_GAUNTLET_THEME";
+    const SOUND_KEY = "SILICON_GAUNTLET_SOUND";
+    const CRT_KEY = "SILICON_GAUNTLET_CRT";
+
+    let state = {
+      challenges: [],
+      selectedTier: "all",
+      activeChallengeId: null,
+      unconqueredOnly: false,
+      searchQuery: "",
+      theme: "amber",
+      soundEnabled: true,
+      scanlinesEnabled: true,
+      isRolling: false
+    };
+
+    /* ==========================================================================
+       SYNTHESIZED WEB AUDIO ENGINE (ZERO EXTERNAL ASSETS)
+       ========================================================================== */
+    class RetroAudioEngine {
+      constructor() {
+        this.ctx = null;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (AudioContext) {
+            this.ctx = new AudioContext();
+          }
+        }
+        if (this.ctx && this.ctx.state === "suspended") {
+          this.ctx.resume();
+        }
+      }
+
+      // Authentic PC Speaker square wave tone
+      beep(freq = 880, duration = 0.08, type = "square", volume = 0.15) {
+        if (!state.soundEnabled) return;
+        this.init();
+        if (!this.ctx) return;
+
+        try {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+
+          gain.gain.setValueAtTime(volume, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+
+          osc.start();
+          osc.stop(this.ctx.currentTime + duration);
+        } catch (e) {
+          console.warn("Audio glitch:", e);
+        }
+      }
+
+      // Floppy drive head seek step / mechanical click
+      click() {
+        if (!state.soundEnabled) return;
+        this.beep(120, 0.015, "sawtooth", 0.1);
+      }
+
+      // Dispenser roll sound - rapid floppy seek chatter
+      rollChatter() {
+        if (!state.soundEnabled) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const baseFrequencies = [220, 330, 440, 550, 660, 880];
+        const randomFreq = baseFrequencies[Math.floor(Math.random() * baseFrequencies.length)];
+        this.beep(randomFreq, 0.035, "square", 0.08);
+      }
+
+      // Card dispense completion thud / boot chime
+      dispenseComplete() {
+        if (!state.soundEnabled) return;
+        this.init();
+        if (!this.ctx) return;
+
+        // IBM PC POST double beep
+        setTimeout(() => this.beep(900, 0.08, "square", 0.16), 0);
+        setTimeout(() => this.beep(1200, 0.14, "square", 0.18), 110);
+      }
+
+      // Victory / Conquered Fanfare (8-bit celebratory arpeggio)
+      conquerFanfare() {
+        if (!state.soundEnabled) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+        notes.forEach((freq, idx) => {
+          setTimeout(() => {
+            this.beep(freq, 0.16, "square", 0.2);
+          }, idx * 120);
+        });
+      }
+    }
+
+    const sound = new RetroAudioEngine();
+
+    /* ==========================================================================
+       INITIALIZATION & STORAGE LOGIC
+       ========================================================================== */
+    function loadSavedState() {
+      // Load Theme
+      const savedTheme = localStorage.getItem(THEME_KEY);
+      if (savedTheme) {
+        state.theme = savedTheme;
+        applyTheme(savedTheme);
+      }
+
+      // Load Sound preference
+      const savedSound = localStorage.getItem(SOUND_KEY);
+      if (savedSound !== null) {
+        state.soundEnabled = savedSound === "true";
+        updateSoundButton();
+      }
+
+      // Load CRT Scanlines
+      const savedCRT = localStorage.getItem(CRT_KEY);
+      if (savedCRT !== null) {
+        state.scanlinesEnabled = savedCRT === "true";
+        applyScanlines(state.scanlinesEnabled);
+      }
+
+      // Load Challenges
+      const savedChallenges = localStorage.getItem(STORAGE_KEY);
+      if (savedChallenges) {
+        try {
+          const parsed = JSON.parse(savedChallenges);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            state.challenges = parsed;
+          } else {
+            state.challenges = JSON.parse(JSON.stringify(FACTORY_CHALLENGES));
+          }
+        } catch (e) {
+          console.error("Failed to parse stored challenges, falling back to factory defaults:", e);
+          state.challenges = JSON.parse(JSON.stringify(FACTORY_CHALLENGES));
+        }
+      } else {
+        state.challenges = JSON.parse(JSON.stringify(FACTORY_CHALLENGES));
+        saveChallengesToStorage();
+      }
+
+      // Ensure conquered properties exist
+      state.challenges.forEach(ch => {
+        if (typeof ch.conquered !== "boolean") ch.conquered = false;
+        if (!ch.notes) ch.notes = "";
+      });
+    }
+
+    function saveChallengesToStorage() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state.challenges));
+      } catch (e) {
+        console.error("Could not write to localStorage:", e);
+      }
+      updateConquestStats();
+      renderCodexTable();
+    }
+
+    /* ==========================================================================
+       THEME & VISUAL CONTROLS
+       ========================================================================== */
+    const THEMES = ["amber", "green", "turbovision", "bios"];
+    const THEME_NAMES = {
+      amber: "AMBER P31",
+      green: "GREEN P1",
+      turbovision: "TURBO VISION",
+      bios: "BIOS WHITE"
+    };
+
+    function cycleTheme() {
+      sound.click();
+      const currentIndex = THEMES.indexOf(state.theme);
+      const nextIndex = (currentIndex + 1) % THEMES.length;
+      state.theme = THEMES[nextIndex];
+      applyTheme(state.theme);
+      localStorage.setItem(THEME_KEY, state.theme);
+      showToast(`DISPLAY THEME: ${THEME_NAMES[state.theme]}`);
+    }
+
+    function applyTheme(themeName) {
+      document.body.setAttribute("data-theme", themeName);
+      const themeLabel = document.getElementById("theme-name");
+      if (themeLabel) themeLabel.innerText = THEME_NAMES[themeName] || themeName.toUpperCase();
+    }
+
+    function toggleSound() {
+      state.soundEnabled = !state.soundEnabled;
+      localStorage.setItem(SOUND_KEY, state.soundEnabled);
+      updateSoundButton();
+      if (state.soundEnabled) sound.beep(1000, 0.08);
+      showToast(`SYNTHESIZER SOUND: ${state.soundEnabled ? "ENABLED" : "MUTED"}`);
+    }
+
+    function updateSoundButton() {
+      const btn = document.getElementById("sound-btn");
+      if (btn) {
+        btn.innerText = state.soundEnabled ? "🔊 SOUND: ON" : "🔇 SOUND: OFF";
+        btn.classList.toggle("active", state.soundEnabled);
+      }
+    }
+
+    function toggleScanlines() {
+      sound.click();
+      state.scanlinesEnabled = !state.scanlinesEnabled;
+      localStorage.setItem(CRT_KEY, state.scanlinesEnabled);
+      applyScanlines(state.scanlinesEnabled);
+      showToast(`CRT SCANLINE PHOSPHOR: ${state.scanlinesEnabled ? "ACTIVE" : "BYPASSED"}`);
+    }
+
+    function applyScanlines(enabled) {
+      document.body.classList.toggle("scanlines-disabled", !enabled);
+      const btn = document.getElementById("scanline-btn");
+      if (btn) {
+        btn.innerText = enabled ? "📺 CRT: ON" : "📺 CRT: OFF";
+        btn.classList.toggle("active", enabled);
+      }
+    }
+
+    /* ==========================================================================
+       REAL-TIME CLOCK (RTC SIMULATOR)
+       ========================================================================== */
+    function updateClock() {
+      const clockEl = document.getElementById("rtc-clock");
+      if (!clockEl) return;
+      const now = new Date();
+      const pad = (n) => String(n).padStart(2, "0");
+      const dateStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+      clockEl.innerText = `RTC: ${dateStr}`;
+    }
+
+    /* ==========================================================================
+       CONQUEST RATIO & DIAGNOSTICS
+       ========================================================================== */
+    function updateConquestStats() {
+      const total = state.challenges.length;
+      const conqueredCount = state.challenges.filter(c => c.conquered).length;
+      const percent = total > 0 ? Math.round((conqueredCount / total) * 100) : 0;
+
+      const statText = document.getElementById("conquest-stat-text");
+      const progressFill = document.getElementById("conquest-progress-fill");
+      const totalCountLabel = document.getElementById("codex-total-count");
+
+      if (statText) statText.innerText = `${conqueredCount} / ${total} CONQUERED (${percent}%)`;
+      if (progressFill) progressFill.style.width = `${percent}%`;
+      if (totalCountLabel) totalCountLabel.innerText = total;
+    }
+
+    /* ==========================================================================
+       TIER SELECTION & FILTERING
+       ========================================================================== */
+    function selectTier(tierName) {
+      sound.click();
+      state.selectedTier = tierName;
+
+      // Update button visual styles
+      document.querySelectorAll(".tier-card-btn").forEach(btn => {
+        btn.classList.toggle("selected", btn.getAttribute("data-tier") === tierName);
+      });
+
+      // Update header profile description
+      const profileDesc = document.getElementById("fleet-profile-desc");
+      if (profileDesc) {
+        if (tierName === "8088") profileDesc.innerText = "8088 XT / TURBO XT (4.77 - 10 MHz REAL MODE)";
+        else if (tierName === "486") profileDesc.innerText = "486 DX/DX2 (33 - 66 MHz PROTECTED MODE)";
+        else if (tierName === "pentium") profileDesc.innerText = "PENTIUM (75 - 200 MHz PIPELINED FPU)";
+        else profileDesc.innerText = "CROSS-GENERATION / FULL FLEET MATRIX";
+      }
+
+      showToast(`ACTIVE HARDWARE FILTER: ${tierName.toUpperCase()}`);
+    }
+
+    function toggleUnconqueredOnly(checked) {
+      sound.click();
+      state.unconqueredOnly = checked;
+      showToast(checked ? "FILTER: ONLY UNCONQUERED CHALLENGES" : "FILTER: ALL CHALLENGES");
+    }
+
+    function handleSearchInput(query) {
+      state.searchQuery = query.trim().toLowerCase();
+    }
+
+    function getFilteredChallenges() {
+      return state.challenges.filter(item => {
+        // Tier Match
+        if (state.selectedTier !== "all" && item.tier !== state.selectedTier) {
+          return false;
+        }
+
+        // Unconquered toggle
+        if (state.unconqueredOnly && item.conquered) {
+          return false;
+        }
+
+        // Search Query
+        if (state.searchQuery) {
+          const q = state.searchQuery;
+          const matchTitle = item.title.toLowerCase().includes(q);
+          const matchPlatform = item.platform.toLowerCase().includes(q);
+          const matchChallenge = item.hardwareChallenge.toLowerCase().includes(q);
+          const matchWhy = item.whyItTests.toLowerCase().includes(q);
+          const matchTags = item.tags && item.tags.some(t => t.toLowerCase().includes(q));
+          if (!matchTitle && !matchPlatform && !matchChallenge && !matchWhy && !matchTags) {
+            return false;
+          }
+        }
+
+        return true;
+      });
+    }
+
+    /* ==========================================================================
+       THE CHALLENGE DISPENSER (ROLLING ANIMATION & RENDERING)
+       ========================================================================== */
+    function rollChallenge() {
+      if (state.isRolling) return;
+      sound.init();
+
+      const candidatePool = getFilteredChallenges();
+      if (candidatePool.length === 0) {
+        sound.beep(200, 0.25, "sawtooth");
+        showToast("NO MATCHING CHALLENGES FOUND! ADJUST FILTERS.");
+        return;
+      }
+
+      state.isRolling = true;
+      const dispenseBtn = document.getElementById("dispense-btn");
+      if (dispenseBtn) dispenseBtn.disabled = true;
+
+      const overlay = document.getElementById("rolling-overlay");
+      const rollingText = document.getElementById("slot-rolling-text");
+      if (overlay) overlay.classList.add("active");
+
+      let rollCount = 0;
+      const maxRolls = 14;
+      const intervalMs = 65;
+
+      const rollInterval = setInterval(() => {
+        rollCount++;
+        const randomCandidate = candidatePool[Math.floor(Math.random() * candidatePool.length)];
+        if (rollingText) {
+          rollingText.innerText = `[${randomCandidate.tier.toUpperCase()}] ${randomCandidate.title.toUpperCase()} (${randomCandidate.year})`;
+        }
+        sound.rollChatter();
+
+        if (rollCount >= maxRolls) {
+          clearInterval(rollInterval);
+
+          // Final pick: pick one that is ideally not the currently displayed one if pool > 1
+          let finalPick = candidatePool[Math.floor(Math.random() * candidatePool.length)];
+          if (candidatePool.length > 1 && finalPick.id === state.activeChallengeId) {
+            finalPick = candidatePool.find(c => c.id !== state.activeChallengeId) || finalPick;
+          }
+
+          state.activeChallengeId = finalPick.id;
+          state.isRolling = false;
+          if (overlay) overlay.classList.remove("active");
+          if (dispenseBtn) dispenseBtn.disabled = false;
+
+          renderChallengeCard(finalPick);
+          sound.dispenseComplete();
+          showToast(`DISPENSED: ${finalPick.title} (${finalPick.year})`);
+        }
+      }, intervalMs);
+    }
+
+    function renderChallengeCard(item) {
+      const container = document.getElementById("active-challenge-card");
+      if (!container) return;
+
+      container.className = `challenge-card ${item.conquered ? "conquered" : ""}`;
+
+      const mobyQuery = encodeURIComponent(`${item.title} ${item.year}`);
+      const wikiQuery = encodeURIComponent(item.title);
+      const vogonsQuery = encodeURIComponent(`${item.title} dos hardware issue`);
+
+      const tagsHtml = (item.tags || []).map(t => `<span class="tech-tag">#${t}</span>`).join("");
+
+      container.innerHTML = `
+        <div class="card-title-bar">
+          <div class="card-game-heading">
+            <span>${escapeHtml(item.title)}</span>
+            <span class="card-game-year">${item.year}</span>
+            <span class="card-tier-pill">${escapeHtml(item.tierLabel || item.tier.toUpperCase())}</span>
+          </div>
+          <div>
+            <span class="conquered-status-indicator ${item.conquered ? "is-conquered" : ""}">
+              ${item.conquered ? "★ CONQUERED ON HARDWARE" : "○ UNCONQUERED"}
+            </span>
+          </div>
+        </div>
+
+        <div class="card-body-content">
+
+          <!-- Hardware Specs Matrix Grid -->
+          <div class="specs-grid">
+            <div class="spec-item">
+              <span class="spec-label">Target OS / Subsystem</span>
+              <span class="spec-value">${escapeHtml(item.platform || "MS-DOS")}</span>
+            </div>
+            <div class="spec-item">
+              <span class="spec-label">Memory Footprint</span>
+              <span class="spec-value">${escapeHtml(item.specs.ram || "Standard")}</span>
+            </div>
+            <div class="spec-item">
+              <span class="spec-label">Graphics Subsystem</span>
+              <span class="spec-value">${escapeHtml(item.specs.video || "VGA")}</span>
+            </div>
+            <div class="spec-item">
+              <span class="spec-label">Sound & Audio Device</span>
+              <span class="spec-value">${escapeHtml(item.specs.sound || "PC Speaker")}</span>
+            </div>
+          </div>
+
+          <!-- The Hardware Challenge (The Feat) -->
+          <div class="challenge-section-block">
+            <div class="section-title-retro">
+              <span>► THE HARDWARE CHALLENGE</span>
+            </div>
+            <div class="section-text">
+              ${escapeHtml(item.hardwareChallenge)}
+            </div>
+          </div>
+
+          <!-- Why It Tests This Chip (Architectural Deep Dive) -->
+          <div class="challenge-section-block why-block">
+            <div class="section-title-retro">
+              <span>⚙ WHY IT TESTS THIS CHIP & ARCHITECTURE</span>
+            </div>
+            <div class="section-text">
+              ${escapeHtml(item.whyItTests)}
+            </div>
+          </div>
+
+          <!-- Tags -->
+          <div class="tags-container">
+            ${tagsHtml}
+          </div>
+
+          <!-- Personal Mission Notes -->
+          <div class="notes-deck">
+            <div class="section-title-retro" style="font-size: 0.75rem; margin-bottom: 2px;">
+              <span>📝 HARDWARE RUN LOG & TUNING NOTES (AUTO-SAVED)</span>
+            </div>
+            <textarea
+              class="notes-textarea"
+              placeholder="Record your DIP switch settings, jumper configs, CONFIG.SYS tweaks, IRQ/DMA assignments, or achieved FPS/benchmark scores here..."
+              oninput="saveChallengeNotes('${item.id}', this.value)"
+            >${escapeHtml(item.notes || "")}</textarea>
+          </div>
+
+          <!-- Actions & Search Hooks -->
+          <div class="card-footer-actions">
+            <div class="quick-links-group">
+              <span style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase;">Technical Hooks:</span>
+              <a href="https://www.mobygames.com/search/?q=${mobyQuery}" target="_blank" rel="noopener noreferrer" class="link-retro">
+                🔍 MobyGames
+              </a>
+              <a href="https://www.pcgamingwiki.com/w/index.php?search=${wikiQuery}" target="_blank" rel="noopener noreferrer" class="link-retro">
+                📚 PCGamingWiki
+              </a>
+              <a href="https://www.google.com/search?q=${vogonsQuery}" target="_blank" rel="noopener noreferrer" class="link-retro">
+                💾 VOGONS Query
+              </a>
+            </div>
+
+            <div class="action-buttons-group">
+              <button class="btn-retro btn-conquer" onclick="toggleConquered('${item.id}')">
+                ${item.conquered ? "✓ CONQUERED (MARK PENDING)" : "★ MARK AS CONQUERED"}
+              </button>
+            </div>
+          </div>
+
+        </div>
+      `;
+    }
+
+    function toggleConquered(id) {
+      sound.init();
+      const target = state.challenges.find(c => c.id === id);
+      if (!target) return;
+
+      target.conquered = !target.conquered;
+      if (target.conquered) {
+        target.conqueredDate = new Date().toISOString();
+        sound.conquerFanfare();
+        showToast(`🏆 CONQUEST REGISTERED: ${target.title.toUpperCase()}!`);
+      } else {
+        target.conqueredDate = null;
+        sound.beep(350, 0.1);
+        showToast(`CHALLENGE RESET TO UNCONQUERED: ${target.title}`);
+      }
+
+      saveChallengesToStorage();
+
+      if (state.activeChallengeId === id) {
+        renderChallengeCard(target);
+      }
+    }
+
+    function saveChallengeNotes(id, noteText) {
+      const target = state.challenges.find(c => c.id === id);
+      if (target) {
+        target.notes = noteText;
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state.challenges));
+        } catch (e) {
+          console.warn("Storage quota exceeded", e);
+        }
+      }
+    }
+
+    /* ==========================================================================
+       CODEX / LIBRARY VIEW & SEARCH
+       ========================================================================== */
+    let codexTierFilter = "all";
+
+    function switchView(viewName) {
+      sound.click();
+      const dispenserView = document.getElementById("dispenser-view");
+      const codexView = document.getElementById("codex-view");
+      const tabDispenser = document.getElementById("tab-dispenser");
+      const tabCodex = document.getElementById("tab-codex");
+
+      if (viewName === "codex") {
+        dispenserView.style.display = "none";
+        codexView.classList.add("active");
+        tabDispenser.classList.remove("active");
+        tabCodex.classList.add("active");
+        renderCodexTable();
+      } else {
+        dispenserView.style.display = "block";
+        codexView.classList.remove("active");
+        tabDispenser.classList.add("active");
+        tabCodex.classList.remove("active");
+      }
+    }
+
+    function filterCodexTier(tier) {
+      sound.click();
+      codexTierFilter = tier;
+      renderCodexTable();
+    }
+
+    function renderCodexTable() {
+      const tbody = document.getElementById("codex-table-body");
+      if (!tbody) return;
+
+      let list = state.challenges;
+      if (codexTierFilter !== "all") {
+        list = list.filter(c => c.tier === codexTierFilter);
+      }
+
+      if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-dim); padding: 20px;">NO CHALLENGES FOUND</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = list.map(item => `
+        <tr class="${item.conquered ? "conquered-row" : ""}" onclick="inspectChallengeFromCodex('${item.id}')">
+          <td style="text-align: center;">${item.conquered ? "★" : "○"}</td>
+          <td style="font-weight: bold;">${escapeHtml(item.title)}</td>
+          <td>${item.year}</td>
+          <td><span class="tier-chip">${item.tier.toUpperCase()}</span></td>
+          <td>${escapeHtml(item.platform || "DOS")}</td>
+          <td style="font-size: 0.8rem; color: var(--text-dim);">${escapeHtml(item.specs.ram + " | " + item.specs.video)}</td>
+          <td style="text-align: right;">
+            <button class="btn-retro" style="padding: 2px 8px; font-size: 0.75rem;" onclick="event.stopPropagation(); inspectChallengeFromCodex('${item.id}')">VIEW</button>
+          </td>
+        </tr>
+      `).join("");
+    }
+
+    function inspectChallengeFromCodex(id) {
+      sound.click();
+      const target = state.challenges.find(c => c.id === id);
+      if (!target) return;
+
+      state.activeChallengeId = target.id;
+      switchView("dispenser");
+      renderChallengeCard(target);
+      window.scrollTo({ top: 300, behavior: "smooth" });
+    }
+
+    /* ==========================================================================
+       CUSTOM CHALLENGE MODAL & FORM
+       ========================================================================== */
+    function openCustomModal() {
+      sound.click();
+      const modal = document.getElementById("custom-modal");
+      if (modal) modal.classList.add("open");
+    }
+
+    function closeCustomModal() {
+      sound.click();
+      const modal = document.getElementById("custom-modal");
+      if (modal) modal.classList.remove("open");
+    }
+
+    function handleCustomSubmit(event) {
+      event.preventDefault();
+      sound.init();
+
+      const form = event.target;
+      const formData = new FormData(form);
+
+      const title = formData.get("title").trim();
+      const year = parseInt(formData.get("year"), 10);
+      const tier = formData.get("tier");
+      const platform = formData.get("platform").trim();
+      const ram = formData.get("ram").trim();
+      const video = formData.get("video").trim();
+      const soundHardware = formData.get("sound").trim() || "PC Speaker / AdLib";
+      const storage = formData.get("storage").trim() || "Floppy / HDD";
+      const hardwareChallenge = formData.get("hardwareChallenge").trim();
+      const whyItTests = formData.get("whyItTests").trim();
+      const rawTags = formData.get("tags").trim();
+
+      const tags = rawTags
+        ? rawTags.split(",").map(t => t.trim()).filter(Boolean)
+        : ["Custom Hardware Test"];
+
+      const tierLabels = {
+        "8088": "8088 / XT (The Crawl)",
+        "486": "486 DX/DX2 (The Sweet Spot)",
+        "pentium": "Pentium (Raw Crunch)"
+      };
+
+      const newChallenge = {
+        id: "custom-" + Date.now(),
+        title,
+        year,
+        tier,
+        tierLabel: tierLabels[tier] || tier.toUpperCase(),
+        platform,
+        specs: {
+          ram,
+          video,
+          sound: soundHardware,
+          storage
+        },
+        hardwareChallenge,
+        whyItTests,
+        tags,
+        conquered: false,
+        conqueredDate: null,
+        notes: ""
+      };
+
+      state.challenges.unshift(newChallenge);
+      saveChallengesToStorage();
+
+      form.reset();
+      closeCustomModal();
+
+      state.activeChallengeId = newChallenge.id;
+      switchView("dispenser");
+      renderChallengeCard(newChallenge);
+
+      sound.dispenseComplete();
+      showToast(`SUCCESSFULLY SAVED CUSTOM CHALLENGE: ${title}!`);
+    }
+
+    /* ==========================================================================
+       IMPORT / EXPORT MODAL & DATA PERSISTENCE
+       ========================================================================== */
+    function openDataModal() {
+      sound.click();
+      exportDataToBuffer();
+      const modal = document.getElementById("data-modal");
+      if (modal) modal.classList.add("open");
+    }
+
+    function closeDataModal() {
+      sound.click();
+      const modal = document.getElementById("data-modal");
+      if (modal) modal.classList.remove("open");
+    }
+
+    function exportDataToBuffer() {
+      const buffer = document.getElementById("json-data-buffer");
+      if (buffer) {
+        buffer.value = JSON.stringify(state.challenges, null, 2);
+      }
+    }
+
+    function downloadJSONFile() {
+      sound.click();
+      exportDataToBuffer();
+      const jsonStr = JSON.stringify(state.challenges, null, 2);
+      const blob = new Blob([jsonStr], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `silicon-gauntlet-backup-${new Date().toISOString().slice(0,10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast("BACKUP .JSON FILE DOWNLOADED");
+    }
+
+    function importFromBuffer() {
+      sound.init();
+      const buffer = document.getElementById("json-data-buffer");
+      if (!buffer) return;
+
+      try {
+        const parsed = JSON.parse(buffer.value);
+        if (!Array.isArray(parsed) || parsed.length === 0) {
+          throw new Error("Data must be a non-empty JSON array of challenge objects.");
+        }
+
+        // Validate basic structure
+        parsed.forEach((c, idx) => {
+          if (!c.id || !c.title || !c.tier) {
+            throw new Error(`Item at index ${idx} is missing required fields (id, title, or tier).`);
+          }
+        });
+
+        state.challenges = parsed;
+        saveChallengesToStorage();
+        closeDataModal();
+
+        // Roll or select top item
+        if (state.challenges.length > 0) {
+          state.activeChallengeId = state.challenges[0].id;
+          renderChallengeCard(state.challenges[0]);
+        }
+
+        sound.dispenseComplete();
+        showToast(`IMPORTED ${state.challenges.length} CHALLENGES SUCCESSFULLY!`);
+      } catch (err) {
+        sound.beep(200, 0.3, "sawtooth");
+        alert("JSON IMPORT ERROR:\n" + err.message);
+      }
+    }
+
+    function resetToFactoryROM() {
+      if (confirm("WARNING: Resetting to Factory ROM will restore the original 32 challenges. Continue?")) {
+        sound.init();
+        state.challenges = JSON.parse(JSON.stringify(FACTORY_CHALLENGES));
+        saveChallengesToStorage();
+        closeDataModal();
+        if (state.challenges.length > 0) {
+          state.activeChallengeId = state.challenges[0].id;
+          renderChallengeCard(state.challenges[0]);
+        }
+        sound.beep(800, 0.15);
+        showToast("FACTORY ROM DEFAULTS RESTORED");
+      }
+    }
+
+    /* ==========================================================================
+       TOAST NOTIFICATIONS
+       ========================================================================== */
+    let toastTimeout = null;
+    function showToast(message) {
+      const toast = document.getElementById("retro-toast");
+      const toastMsg = document.getElementById("toast-message");
+      if (!toast || !toastMsg) return;
+
+      toastMsg.innerText = message;
+      toast.classList.add("show");
+
+      if (toastTimeout) clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        toast.classList.remove("show");
+      }, 2600);
+    }
+
+    /* ==========================================================================
+       UTILITY FUNCTIONS
+       ========================================================================== */
+    function escapeHtml(text) {
+      if (!text) return "";
+      return String(text)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    /* ==========================================================================
+       KEYBOARD SHORTCUTS
+       ========================================================================== */
+    window.addEventListener("keydown", (e) => {
+      // Do not intercept keystrokes while user is typing in inputs or textareas
+      const tag = (e.target.tagName || "").toLowerCase();
+      if (tag === "input" || tag === "textarea" || tag === "select") return;
+
+      const key = e.key.toLowerCase();
+
+      // Spacebar: Roll challenge
+      if (e.code === "Space") {
+        e.preventDefault();
+        rollChallenge();
+      }
+      // 'C': Conquer active challenge
+      else if (key === "c") {
+        if (state.activeChallengeId) {
+          toggleConquered(state.activeChallengeId);
+        }
+      }
+      // 'T': Cycle theme
+      else if (key === "t") {
+        cycleTheme();
+      }
+      // 'M': Mute/Unmute sound
+      else if (key === "m") {
+        toggleSound();
+      }
+      // 'L': Toggle Codex view
+      else if (key === "l") {
+        const isCodexActive = document.getElementById("codex-view").classList.contains("active");
+        switchView(isCodexActive ? "dispenser" : "codex");
+      }
+    });
+
+    /* ==========================================================================
+       BOOT SEQUENCE ON LOAD
+       ========================================================================== */
+    window.addEventListener("DOMContentLoaded", () => {
+      loadSavedState();
+
+      // Setup UI listeners
+      document.getElementById("theme-btn").addEventListener("click", cycleTheme);
+      document.getElementById("sound-btn").addEventListener("click", toggleSound);
+      document.getElementById("scanline-btn").addEventListener("click", toggleScanlines);
+
+      // Start RTC Clock
+      updateClock();
+      setInterval(updateClock, 1000);
+
+      // Initial roll / display first challenge
+      if (state.challenges.length > 0) {
+        const initialPick = state.challenges[0];
+        state.activeChallengeId = initialPick.id;
+        renderChallengeCard(initialPick);
+      }
+
+      updateConquestStats();
+    });
+  </script>
+</body>
+</html>
